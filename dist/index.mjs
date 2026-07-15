@@ -57287,11 +57287,36 @@ router3.patch("/applications/:token", async (req, res) => {
     if (step > 1) updateData.status = "avaliacao_andamento";
   }
   if (stepData) {
+    if (step === 2) {
+      const fullName = String(stepData.fullName ?? "").trim();
+      const phoneDigits = String(stepData.phone ?? "").replace(/\D/g, "");
+      const discordId = String(stepData.discordId ?? "").trim();
+      const email = String(stepData.email ?? "").trim().toLowerCase();
+      const age = Number(stepData.age);
+      if (!/^[\p{L}][\p{L}' -]+\s+[\p{L}][\p{L}' -]+$/u.test(fullName)) {
+        return void res.status(400).json({ error: "Informe nome e sobrenome reais" });
+      }
+      if (!Number.isInteger(age) || age < 18 || age > 80) {
+        return void res.status(400).json({ error: "A idade deve estar entre 18 e 80 anos" });
+      }
+      if (phoneDigits.length < 10 || phoneDigits.length > 11) {
+        return void res.status(400).json({ error: "Informe um telefone brasileiro v\xE1lido com DDD" });
+      }
+      if (!/^\d{17,20}$/.test(discordId)) {
+        return void res.status(400).json({ error: "Informe o ID num\xE9rico v\xE1lido do Discord (17 a 20 d\xEDgitos)" });
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return void res.status(400).json({ error: "Informe um e-mail v\xE1lido" });
+      }
+      stepData.fullName = fullName;
+      stepData.phone = phoneDigits;
+      stepData.discordId = discordId;
+      stepData.email = email;
+    }
     const stepMap = {
       2: "personalData",
-      3: "characterData",
-      4: "experienceData",
-      5: "staffExpData",
+      3: "experienceData",
+      5: "motivationData",
       6: "punishmentData",
       7: "availabilityData",
       8: "motivationData"
