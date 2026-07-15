@@ -57408,16 +57408,21 @@ router3.get("/applications/:token/quiz", async (req, res) => {
   if (!app2) return void res.status(404).json({ error: "Candidatura n\xE3o encontrada" });
   const [existingSession] = await db.select().from(applicationQuizSessionsTable).where(eq(applicationQuizSessionsTable.applicationId, app2.id)).limit(1);
   let questionIds;
-  if (existingSession) {
+  if (existingSession && Array.isArray(existingSession.questionIds) && existingSession.questionIds.length > 0) {
     questionIds = existingSession.questionIds;
   } else {
     const questions2 = await db.select({ id: questionsTable.id, category: questionsTable.category }).from(questionsTable).where(eq(questionsTable.active, true));
     const shuffled = questions2.sort(() => Math.random() - 0.5).slice(0, 30);
     questionIds = shuffled.map((q) => q.id);
-    await db.insert(applicationQuizSessionsTable).values({
-      applicationId: app2.id,
-      questionIds
-    });
+    if (questionIds.length === 0) return void res.status(503).json({ error: "Perguntas ainda n\xE3o foram configuradas" });
+    if (existingSession) {
+      await db.update(applicationQuizSessionsTable).set({ questionIds }).where(eq(applicationQuizSessionsTable.id, existingSession.id));
+    } else {
+      await db.insert(applicationQuizSessionsTable).values({
+        applicationId: app2.id,
+        questionIds
+      });
+    }
   }
   const questions = await db.select().from(questionsTable).where(sql`${questionsTable.id} = ANY(${questionIds})`);
   const formatted = questions.map((q) => {
