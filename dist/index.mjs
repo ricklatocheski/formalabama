@@ -57254,6 +57254,9 @@ router3.post("/applications", async (req, res) => {
   }
   const token = generateApplicationToken();
   const applicationNumber = generateApplicationNumber();
+  const forwardedIp = String(req.headers["x-client-ip"] ?? req.headers["x-forwarded-for"] ?? req.ip ?? "").split(",")[0].trim() || null;
+  const forwardedCountry = String(req.headers["x-client-country"] ?? "").trim() || null;
+  const forwardedCity = String(req.headers["x-client-city"] ?? "").trim() || null;
   const [app2] = await db.insert(applicationsTable).values({
     applicationNumber,
     token,
@@ -57261,8 +57264,10 @@ router3.post("/applications", async (req, res) => {
     consentText,
     status: "inscricao_iniciada",
     step: 1,
-    ipAddress: req.ip ?? null,
-    userAgent: req.headers["user-agent"] ?? null
+    ipAddress: forwardedIp,
+    userAgent: req.headers["user-agent"] ?? null,
+    country: forwardedCountry,
+    city: forwardedCity
   }).returning();
   return void res.status(201).json(formatApplication(app2));
 });
