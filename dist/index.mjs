@@ -57424,7 +57424,7 @@ router3.get("/applications/:token/quiz", async (req, res) => {
       });
     }
   }
-  const questions = await db.select().from(questionsTable).where(sql`${questionsTable.id} = ANY(${questionIds})`);
+  const questions = await db.select().from(questionsTable).where(inArray(questionsTable.id, questionIds));
   const formatted = questions.map((q) => {
     const options = q.options;
     const shuffledOptions = options ? [...options].sort(() => Math.random() - 0.5).map(({ id, text: text2 }) => ({ id, text: text2 })) : null;
