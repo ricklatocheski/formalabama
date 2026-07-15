@@ -57274,6 +57274,10 @@ router3.post("/applications", async (req, res) => {
 router3.get("/applications/:token", async (req, res) => {
   const [app2] = await db.select().from(applicationsTable).where(eq(applicationsTable.token, req.params.token)).limit(1);
   if (!app2) return void res.status(404).json({ error: "Candidatura n\xE3o encontrada" });
+  if (app2.status === "avaliacao_andamento" && app2.step <= 5) {
+    const [recovered] = await db.update(applicationsTable).set({ status: "inscricao_incompleta", updatedAt: /* @__PURE__ */ new Date() }).where(eq(applicationsTable.id, app2.id)).returning();
+    return void res.json(formatApplication(recovered));
+  }
   return void res.json(formatApplication(app2));
 });
 router3.patch("/applications/:token", async (req, res) => {
@@ -57289,7 +57293,7 @@ router3.patch("/applications/:token", async (req, res) => {
   };
   if (step !== void 0) {
     updateData.step = step;
-    if (step > 1) updateData.status = "avaliacao_andamento";
+    if (step > 1) updateData.status = "inscricao_incompleta";
   }
   if (stepData) {
     if (step === 2) {
